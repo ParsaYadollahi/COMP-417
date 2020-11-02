@@ -7,16 +7,17 @@ from numpy import asarray
 from PIL import Image
 
 from itertools import product
-from math import cos, sin, pi, sqrt 
+from math import cos, sin, pi, sqrt
 
 from plotting_utils import draw_plan
 from priority_queue import priority_dict
 
+
 class State(object):
     """
-    2D state. 
+    2D state.
     """
-    
+
     def __init__(self, x, y):
         """
         x represents the columns on the image and y represents the rows,
@@ -25,14 +26,13 @@ class State(object):
         self.x = x
         self.y = y
 
-        
     def __eq__(self, state):
         """
         When are two states equal?
-        """    
-        return state and self.x == state.x and self.y == state.y 
+        """
+        return state and self.x == state.x and self.y == state.y
 
-    def __lt__(self,other):
+    def __lt__(self, other):
         return self.x < other.x or (self.x == other.x and self.y < other.y)
 
     def __hash__(self):
@@ -41,63 +41,62 @@ class State(object):
         want to use State objects as keys in dictionaries
         """
         return hash((self.x, self.y))
-    
-    
+
+
 class AStarPlanner(object):
     """
     Applies the A* shortest path algorithm on a given grid world
     """
-    
+
     def __init__(self, world):
         # (rows, cols, channels) array with values in {0,..., 255}
         self.world = world
 
         # (rows, cols) binary array. Cell is 1 iff it is occupied
-        self.occ_grid = self.world[:,:,0]
+        self.occ_grid = self.world[:, :, 0]
         self.occ_grid = (self.occ_grid == 0).astype('uint8')
-        
+
     def state_is_free(self, state):
         """
-        Does collision detection. Returns true iff the state and its nearby 
+        Does collision detection. Returns true iff the state and its nearby
         surroundings are free.
         """
         return (self.occ_grid[state.y-5:state.y+5, state.x-5:state.x+5] == 0).all()
-        
+
     def get_neighboring_states(self, state):
         """
         Returns free neighboring states of the given state. Returns up to 8
         neighbors (north, south, east, west, northwest, northeast, southwest, southeast)
         """
-        
+
         x = state.x
         y = state.y
-        
+
         # Neighbors can only lie within the image. This is how to get the image size.
         cols, rows = self.world.shape[:2]
 
         dx = [0]
         dy = [0]
-        
+
         if (x > 0):
             dx.append(-1)
 
-        if (x < rows -1):
+        if (x < rows - 1):
             dx.append(1)
 
         if (y > 0):
             dy.append(-1)
 
-        if (y < cols -1):
+        if (y < cols - 1):
             dy.append(1)
 
         # product() returns the cartesian product
         # yield is a python generator. Look it up.
-        for delta_x, delta_y in product(dx,dy):
+        for delta_x, delta_y in product(dx, dy):
             if delta_x != 0 or delta_y != 0:
                 ns = State(x + delta_x, y + delta_y)
                 if self.state_is_free(ns):
-                    yield ns 
-            
+                    yield ns
 
     def _follow_parent_pointers(self, parents, state):
         """
@@ -107,11 +106,11 @@ class AStarPlanner(object):
         path [start_state, ..., destination_state] by following the
         parent pointers.
         """
-        
+
         assert (state in parents)
         curr_ptr = state
         shortest_path = [state]
-        
+
         while curr_ptr is not None:
             shortest_path.append(curr_ptr)
             curr_ptr = parents[curr_ptr]
@@ -137,29 +136,30 @@ class AStarPlanner(object):
         Q[start_state] = 0.0
 
         # Array that contains the optimal distance we've found from the starting state so far
-        best_dist_found = float("inf") * np.ones((world.shape[1], world.shape[0]))
+        best_dist_found = float(
+            "inf") * np.ones((world.shape[1], world.shape[0]))
         best_dist_found[start_state.x, start_state.y] = 0
 
         # Boolean array that is true iff the distance to come of a state has been
         # finalized
-        visited = np.zeros((world.shape[1], world.shape[0]), dtype='uint8')
+        visited = np.zeros((world.shape[0], world.shape[1]), dtype='uint8')
 
         # Contains key-value pairs of states where key is the parent of the value
         # in the computation of the shortest path
         parents = {start_state: None}
-        
+
         while Q:
-            
+
             # s is also removed from the priority Q with this
             s = Q.pop_smallest()
-            
+
             # Assert s hasn't been visited before
             assert (visited[s.x, s.y] == 0)
 
-            # Mark it visited because here we will go over every neighbor, 
+            # Mark it visited because here we will go over every neighbor,
             # so there's no need to come back after this (by greedy property)
             visited[s.x, s.y] = 1
-            
+
             if s == dest_state:
                 return self._follow_parent_pointers(parents, s)
 
@@ -169,16 +169,19 @@ class AStarPlanner(object):
                     continue
 
                 transition_distance = sqrt((ns.x - s.x)**2 + (ns.y - s.y)**2)
-                alternative_best_dist_ns = best_dist_found[s.x, s.y] + transition_distance
+                dest_to_goal = sqrt((s.x-dest_state.x) **
+                                    2+(s.y-dest_state.y)**2)
+                alternative_best_dist_ns = best_dist_found[s.x,
+                                                           s.y] + transition_distance
 
                 # if the state ns has not been visited before or we just found a shorter path
                 # to visit it then update its priority in the queue, and also its
                 # distance to come and its parent
                 if (ns not in Q) or (alternative_best_dist_ns < best_dist_found[ns.x, ns.y]):
-                    Q[ns] = alternative_best_dist_ns
+                    Q[ns] = alternative_best_dist_ns+dest_to_goal
                     best_dist_found[ns.x, ns.y] = alternative_best_dist_ns
                     parents[ns] = s
-                    
+
         return [start_state]
 
 
@@ -194,15 +197,15 @@ if __name__ == "__main__":
     astar = AStarPlanner(world)
     start_state = State(10, 10)
 
-
     # TODO: Change the goal state to 3 different values, saving and running between each
     # in order to produce your images to submit
-    dest_state = State(300,300)
-    
-    print("astar_planner.py is attempting to find a path from ("+str(start_state.x)+','+str(start_state.y)+') to ('+str(dest_state.x)+','+str(dest_state.y)+') in the image named ' + sys.argv[1] + '.')
+    dest_state = State(300, 300)
+
+    print("astar_planner.py is attempting to find a path from ("+str(start_state.x)+','+str(start_state.y) +
+          ') to ('+str(dest_state.x)+','+str(dest_state.y)+') in the image named ' + sys.argv[1] + '.')
     print('This may take a few moments...')
 
     plan = astar.plan(start_state, dest_state)
-    draw_plan(world, plan, bgr=(0,0,255), thickness=2, show_live=False,filename='astar_result.png')
+    draw_plan(world, plan, bgr=(0, 0, 255), thickness=2,
+              show_live=False, filename='astar_result.png')
     print('Planning complete. See image astar_result.png to check the plan.')
-    
