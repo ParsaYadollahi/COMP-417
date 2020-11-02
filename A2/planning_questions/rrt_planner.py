@@ -70,8 +70,12 @@ class RRTPlanner(object):
         Does collision detection. Returns true iff the state and its nearby
         surroundings are free.
         """
-        free = (self.occ_grid[int(state.y)-2:int(state.y) +
-                              2, int(state.x)-2:int(state.x)+2] == 0).all()
+        y = int(state.y)
+        x = int(state.x)
+        free = (self.occ_grid[
+            y-2: y + 2,
+            x-2: x + 2
+        ] == 0).all()
         return free
 
     def sample_state(self):
@@ -217,9 +221,11 @@ class RRTPlanner(object):
             # TODO: Use the methods of this class as in the slides to
             # compute s_new correctly. The code here has several problems, as you'll see
             # in the output.
-            random = self.sample_state()
-            s_nearest = self.find_closest_state(tree_nodes, random)
-            s_new = self.steer_towards(s_nearest, random, max_steering_radius)
+            random_state = self.sample_state()
+            s_nearest = self.find_closest_state(tree_nodes, random_state)
+            s_new = self.steer_towards(
+                s_nearest, random_state, max_steering_radius
+            )
 
             if self.path_is_obstacle_free(s_nearest, s_new):
                 tree_nodes.add(s_new)
@@ -267,8 +273,8 @@ if __name__ == "__main__":
     world = asarray(image)
     rrt = RRTPlanner(world)
 
-    start_state = State(500, 300, None)
-    dest_state = State(10, 10, None)
+    start_state = State(400, 300, None)
+    dest_state = State(15, 200, None)
 
     max_num_steps = 1000     # max number of nodes to be added to the tree
     max_steering_radius = 30  # pixels
@@ -282,4 +288,4 @@ if __name__ == "__main__":
 
     print('RRT planning complete. Saving image.')
     draw_plan(world, plan, bgr=(0, 0, 255), thickness=2,
-              show_live=False, filename='rrt_result.png')
+              show_live=False, filename='rrt_result2_ParsaYadollahi.png')
