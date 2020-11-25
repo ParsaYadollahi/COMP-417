@@ -124,14 +124,14 @@ class HuskyMapper:
         #
 
         m = self.ogm.meters_per_cell
-        dist = sqrt(
+        range_diff = sqrt(
             ((row) * m - robot_row * m) ** 2
             + (col * m - (robot_col) * m) ** 2
         )
-        range_diff = atan2(((row - robot_row) * m), (col - robot_col) * m)
+        angle = atan2(((row - robot_row) * m), (col - robot_col) * m)
 
-        angle_diff = abs(atan2(sin((range_diff - laser_theta) * m),
-                               cos(range_diff - laser_theta) * m))
+        angle_diff = abs(atan2(sin((angle - laser_theta) * m),
+                               cos(angle - laser_theta) * m))
 
         if self.max_laser_range < range_diff or self.max_laser_angle < angle_diff:
             return False
@@ -158,8 +158,16 @@ class HuskyMapper:
         # TODO: Find the range r and angle diff_angle of the beam (robot_row, robot_col) ------> (row, col)
         # r should be in meters and diff_angle should be in [-pi, pi]. Useful things to know are same as above.
         #
-        r = 1.0  # MUST CHANGE THIS
-        diff_angle = 0.0  # MUST CHANGE THIS
+
+        m = self.ogm.meters_per_cell
+
+        r = sqrt(
+            ((row) * m - robot_row * m) ** 2
+            + (col * m - (robot_col) * m) ** 2
+        )  # MUST CHANGE THIS
+        angle = atan2(((row - robot_row) * m), (col - robot_col) * m)
+        diff_angle = abs(atan2(sin((angle - robot_theta_in_map) * m),
+                               cos(angle - robot_theta_in_map) * m))  # MUST CHANGE THIS
 
         closest_beam_angle, closest_beam_idx = min(
             (val, idx)
