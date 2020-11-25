@@ -107,9 +107,12 @@ class HuskyMapper:
 
         # This line is a place-holder which is incorrect and should be replaced. It does
         # demonstrate the correct data structure
-        points_in_map_frame = points_in_baselaser_frame
 
-        return points_in_map_frame
+        # points_in_map_frame = [
+        #     np.dot(self.angles_in_baselaser_frame, xyz_baselaser)
+        #     for xyz_baselaser in points_in_baselaser_frame
+        # ]
+        return points_in_baselaser_frame
 
     def is_in_field_of_view(self, robot_row, robot_col, laser_theta, row, col):
         # Returns true iff the cell (row, col) in the grid is in the field of view of the 2D laser of the
@@ -130,8 +133,8 @@ class HuskyMapper:
         )
         angle = atan2(((row - robot_row) * m), (col - robot_col) * m)
 
-        angle_diff = abs(atan2(sin((angle - laser_theta) * m),
-                               cos(angle - laser_theta) * m))
+        angle_diff = abs(atan2(sin(angle - laser_theta),
+                               cos(angle - laser_theta)))
 
         if self.max_laser_range < range_diff or self.max_laser_angle < angle_diff:
             return False
@@ -155,7 +158,7 @@ class HuskyMapper:
         p_occupied = 0.999
 
         #
-        # TODO: Find the range r and angle diff_angle of the beam (robot_row, robot_col) ------> (row, col)
+        # TODO: DONE Find the range r and angle diff_angle of the beam (robot_row, robot_col) ------> (row, col)
         # r should be in meters and diff_angle should be in [-pi, pi]. Useful things to know are same as above.
         #
 
@@ -166,8 +169,8 @@ class HuskyMapper:
             + (col * m - (robot_col) * m) ** 2
         )  # MUST CHANGE THIS
         angle = atan2(((row - robot_row) * m), (col - robot_col) * m)
-        diff_angle = abs(atan2(sin((angle - robot_theta_in_map) * m),
-                               cos(angle - robot_theta_in_map) * m))  # MUST CHANGE THIS
+        diff_angle = atan2(sin((angle - robot_theta_in_map)),
+                           cos(angle - robot_theta_in_map))  # MUST CHANGE THIS
 
         closest_beam_angle, closest_beam_idx = min(
             (val, idx)
@@ -205,9 +208,11 @@ class HuskyMapper:
         # 1) self.angles_in_baselaser_frame is a list of angles of the same size as the
         #    scan. They correspond so each entry "i" of the ranges and "i" of the angles
         #    matches. Now you have a r, theta to convert to x, y : polar -> euclidean.
-        points_xyz_in_baselaser_frame = [np.array([0, 0, 0])] * len(
-            ranges_in_baselaser_frame
-        )  # CHANGE THIS
+        points_xyz_in_baselaser_frame = [
+            np.array([r, cos(theta), r * sin(theta), 0])
+            for (r, theta) in zip(ranges_in_baselaser_frame, self.angles_in_baselaser_frame)
+            if r < self.max_laser_range and r > self.min_laser_range
+        ]  # CHANGE THIS
         points_xyz_in_map_frame = self.from_laser_to_map_coordinates(
             points_xyz_in_baselaser_frame
         )
