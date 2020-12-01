@@ -14,6 +14,7 @@ import pygame
 import math
 import numpy as np
 from scipy.integrate import ode
+from lqr_starter import policyfn
 
 # The very basic code you should know and interact with starts here. Sets some variables that you
 # might change or add to, then defines a function to do control that is currently empty. Add
@@ -37,7 +38,9 @@ goal = np.array([0, 0, 0, np.pi])
 
 def computeControl(x):
 
-    control = 1.1  # This means apply no force. Please replace this with your computations and
+    # This means apply no force. Please replace this with your computations and
+    control = policyfn(x)
+    # control = 0
     # return a single scalar (real number), force that should be applied to the cart
     # as a function of its current state, x.
 
