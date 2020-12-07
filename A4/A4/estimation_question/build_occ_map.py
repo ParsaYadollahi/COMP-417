@@ -55,8 +55,12 @@ class OccupancyGridMap:
         for r in range(0, self.height):
             for c in range(0, self.width):
                 # threshold the pixel
-                img[r, c] = int(self.log_odds_ratio_to_belief(
-                    self.log_odds_ratio_occupancy_grid_map[r][c]) * 255)
+                img[r, c] = int(
+                    self.log_odds_ratio_to_belief(
+                        self.log_odds_ratio_occupancy_grid_map[r][c]
+                    )
+                    * 255
+                )
 
         for point in self.points:
             r, c = self.cartesian_to_grid_coords(point[0], point[1])
@@ -114,11 +118,11 @@ class HuskyMapper:
         # This line is a place-holder which is incorrect and should be replaced. It does
         # demonstrate the correct data structure
 
-        # points_in_map_frame = [
-        #     np.dot(self.angles_in_baselaser_frame, xyz_baselaser)
-        #     for xyz_baselaser in points_in_baselaser_frame
-        # ]
-        return points_in_baselaser_frame
+        points_in_map_frame = [
+            (x_rel + self.baselaser_x_in_map, y_rel + self.baselaser_y_in_map, 0)
+            for x_rel, y_rel, z_rel in points_in_baselaser_frame
+        ]
+        return points_in_map_frame
 
     def is_in_field_of_view(self, robot_row, robot_col, laser_theta, row, col):
         # Returns true iff the cell (row, col) in the grid is in the field of view of the 2D laser of the
@@ -134,13 +138,12 @@ class HuskyMapper:
 
         m = self.ogm.meters_per_cell
         range_diff = sqrt(
-            ((row) * m - robot_row * m) ** 2
-            + (col * m - (robot_col) * m) ** 2
+            ((row) * m - robot_row * m) ** 2 + (col * m - (robot_col) * m) ** 2
         )
         angle = atan2(((row - robot_row) * m), (col - robot_col) * m)
 
-        angle_diff = abs(atan2(sin(angle - laser_theta),
-                               cos(angle - laser_theta)))
+        angle_diff = abs(
+            atan2(sin(angle - laser_theta), cos(angle - laser_theta)))
 
         if self.max_laser_range < range_diff or self.max_laser_angle < angle_diff:
             return False
@@ -164,19 +167,19 @@ class HuskyMapper:
         p_occupied = 0.999
 
         #
-        # TODO: DONE Find the range r and angle diff_angle of the beam (robot_row, robot_col) ------> (row, col)
+        # TODO: Find the range r and angle diff_angle of the beam (robot_row, robot_col) ------> (row, col)
         # r should be in meters and diff_angle should be in [-pi, pi]. Useful things to know are same as above.
         #
 
         m = self.ogm.meters_per_cell
 
         r = sqrt(
-            ((row) * m - robot_row * m) ** 2
-            + (col * m - (robot_col) * m) ** 2
+            ((row) * m - robot_row * m) ** 2 + (col * m - (robot_col) * m) ** 2
         )  # MUST CHANGE THIS
         angle = atan2(((row - robot_row) * m), (col - robot_col) * m)
-        diff_angle = atan2(sin((angle - robot_theta_in_map)),
-                           cos(angle - robot_theta_in_map))  # MUST CHANGE THIS
+        diff_angle = atan2(
+            sin((angle - robot_theta_in_map)), cos(angle - robot_theta_in_map)
+        )  # MUST CHANGE THIS
 
         closest_beam_angle, closest_beam_idx = min(
             (val, idx)
@@ -214,14 +217,30 @@ class HuskyMapper:
         # 1) self.angles_in_baselaser_frame is a list of angles of the same size as the
         #    scan. They correspond so each entry "i" of the ranges and "i" of the angles
         #    matches. Now you have a r, theta to convert to x, y : polar -> euclidean.
-        points_xyz_in_baselaser_frame = [
-            np.array([r, cos(theta), r * sin(theta), 0])
-            for (r, theta) in zip(ranges_in_baselaser_frame, self.angles_in_baselaser_frame)
-            if r < self.max_laser_range and r > self.min_laser_range
-        ]  # CHANGE THIS
+        points_xyz_in_baselaser_frame = []
+        for i in range(len(ranges_in_baselaser_frame)):
+            if ranges_in_baselaser_frame[i] > 10000:
+                continue
+            point = np.array(
+                [
+                    ranges_in_baselaser_frame[i]
+                    * cos(
+                        self.angles_in_baselaser_frame[i] +
+                        self.yaw_map_baselaser
+                    ),
+                    ranges_in_baselaser_frame[i]
+                    * sin(
+                        self.angles_in_baselaser_frame[i] +
+                        self.yaw_map_baselaser
+                    ),
+                    0,
+                ]
+            )
+            points_xyz_in_baselaser_frame.append(point)
         points_xyz_in_map_frame = self.from_laser_to_map_coordinates(
             points_xyz_in_baselaser_frame
         )
+
         self.ogm.add_points(points_xyz_in_map_frame)
 
         # END OF YOUR CHANGES
