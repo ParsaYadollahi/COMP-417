@@ -1,4 +1,4 @@
-'''
+"""
 This file holds a cartpole simulator using physics functions borrowed from a previous
 research project. Those are:
 Copyright (c) 2017, Juan Camilo Gamboa Higuera, Anqi Xu, Victor Barbaros, Alex Chatron-Michaud, David Meger
@@ -8,7 +8,7 @@ https://pastebin.com/zTZVi8Yv
 python simple pendulum with pygame
 
 The rest of the file and instructions are written for McGill's COMP 417 Fall 2020
-'''
+"""
 
 import pygame
 import math
@@ -21,7 +21,7 @@ from lqr_starter import policyfn
 # more logic in and around that function to make your controller work/learn!
 
 # This specifies the average starting state
-x0 = [0.0, 0, 0, np.pi+np.pi/40]
+x0 = [0.0, 0, 0, np.pi + np.pi / 40]
 # change this if you want to do swing-up.
 # The meaning of the state dimensions are
 # state[0] : cart position (x)
@@ -46,6 +46,7 @@ def computeControl(x):
 
     return control
 
+
 # After this is all the code to run the cartpole physics, draw it on the screen, etc.
 # You should not have to change anything below this, but are encouraged to read and understand
 # as much as possible.
@@ -55,8 +56,8 @@ def computeControl(x):
 # set the width and height of the window
 screen_width, screen_height = 800, 400
 # (you can increase or decrease if you want to, just remind to keep even numbers)
-Done = False                # if True,out of while loop, and close pygame
-Pause = False               # when True, freeze the pendulum. This is
+Done = False  # if True,out of while loop, and close pygame
+Pause = False  # when True, freeze the pendulum. This is
 # for debugging purposes
 
 # COLORS
@@ -98,13 +99,14 @@ class CartPole(object):
         # The ODE solver is connected with our instantaneous dynamics equations so it can do
         # the hard work of computing the motion over time for us.
         self.solver = ode(self.dynamics).set_integrator(
-            'dopri5', atol=1e-12, rtol=1e-12)
+            "dopri5", atol=1e-12, rtol=1e-12
+        )
         self.set_state(self.x)
 
     # For internal use. This connects up the local state in the class
     # with the variables used by our ODE solver.
     def set_state(self, x):
-        if (self.x is None or np.linalg.norm(x-self.x) > 1e-12):
+        if self.x is None or np.linalg.norm(x - self.x) > 1e-12:
             self.x = np.array(x, dtype=np.float64).flatten()
         self.solver = self.solver.set_initial_value(self.x)
         self.t = self.solver.t
@@ -119,11 +121,23 @@ class CartPole(object):
     # Draw the cart and pole
     def draw(self, bg):
         cart_centre = (
-            int(screen_width/2+self.x[0]*cart_x_to_screen_scaling), int(screen_height/2))
-        pole_end = (int(cart_centre[0] + pole_length * math.sin(self.x[3])),
-                    int(cart_centre[1] + pole_length*math.cos(self.x[3])))
-        pygame.draw.rect(bg, black, [
-                         cart_centre[0]-cart_width/2, cart_centre[1]-cart_height/2, cart_width, cart_height])
+            int(screen_width / 2 + self.x[0] * cart_x_to_screen_scaling),
+            int(screen_height / 2),
+        )
+        pole_end = (
+            int(cart_centre[0] + pole_length * math.sin(self.x[3])),
+            int(cart_centre[1] + pole_length * math.cos(self.x[3])),
+        )
+        pygame.draw.rect(
+            bg,
+            black,
+            [
+                cart_centre[0] - cart_width / 2,
+                cart_centre[1] - cart_height / 2,
+                cart_width,
+                cart_height,
+            ],
+        )
         pygame.draw.lines(bg, black, False, [cart_centre, pole_end], 2)
         pygame.draw.circle(bg, Dark_red, cart_centre, radius - 2)
         pygame.draw.circle(bg, Dark_red, pole_end, radius)
@@ -137,20 +151,20 @@ class CartPole(object):
 
         sz = np.sin(z[3])
         cz = np.cos(z[3])
-        cz2 = cz*cz
+        cz2 = cz * cz
 
-        a0 = self.m*self.l*z[2]*z[2]*sz
-        a1 = self.g*sz
-        a2 = f[0] - self.b*z[1]
-        a3 = 4*(self.M+self.m) - 3*self.m*cz2
+        a0 = self.m * self.l * z[2] * z[2] * sz
+        a1 = self.g * sz
+        a2 = f[0] - self.b * z[1]
+        a3 = 4 * (self.M + self.m) - 3 * self.m * cz2
 
         dz = np.zeros((4, 1))
         # x
         dz[0] = z[1]
-        dz[1] = (2*a0 + 3*self.m*a1*cz + 4*a2) / \
-            (a3)                       # dx/dt
-        dz[2] = -3*(a0*cz + 2*((self.M+self.m)*a1 + a2*cz)) / \
-            (self.l*a3)   # dtheta/dt
+        dz[1] = (2 * a0 + 3 * self.m * a1 * cz + 4 * a2) / (a3)  # dx/dt
+        dz[2] = (
+            -3 * (a0 * cz + 2 * ((self.M + self.m) * a1 + a2 * cz)) / (self.l * a3)
+        )  # dtheta/dt
         # theta
         dz[3] = z[2]
 
@@ -178,17 +192,17 @@ class CartPole(object):
     def get_state(self):
         return self.x
 
+
 # The next two are just helper functions for the display.
 # Draw a grid behind the cartpole
 
 
 def grid():
     for x in range(50, screen_width, 50):
-        pygame.draw.lines(background, gray, False, [
-                          (x, 0), (x, screen_height)])
+        pygame.draw.lines(background, gray, False, [(x, 0), (x, screen_height)])
         for y in range(50, screen_height, 50):
-            pygame.draw.lines(background, gray, False, [
-                              (0, y), (screen_width, y)])
+            pygame.draw.lines(background, gray, False, [(0, y), (screen_width, y)])
+
 
 # Clean up the screen and draw a fresh grid and the cartpole with its latest state coordinates
 
@@ -207,17 +221,17 @@ pendulum = CartPole(x0)
 state = pendulum.get_state()
 
 while not Done:
-    clock.tick(240)             # GUI refresh rate
+    clock.tick(240)  # GUI refresh rate
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             Done = True
-        if event.type == pygame.KEYDOWN:    # "r" key resets the simulator
+        if event.type == pygame.KEYDOWN:  # "r" key resets the simulator
             if event.key == pygame.K_r:
                 pendulum.reset()
-            if event.key == pygame.K_p:     # holding "p" key freezes time
+            if event.key == pygame.K_p:  # holding "p" key freezes time
                 Pause = True
-        if event.type == pygame.KEYUP:      # releasing "p" makes us live again
+        if event.type == pygame.KEYUP:  # releasing "p" makes us live again
             if event.key == pygame.K_p:
                 Pause = False
 

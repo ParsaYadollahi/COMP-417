@@ -28,17 +28,38 @@ g = 9.82  # gravity - I thought it was 9.81 but aight I guess
 A = np.array(
     [
         [0, 1, 0, 0],
-        [0, -(4 * b) / (m + 4 * M), 0, (3 * m * g) / (m + 4 * M)],
-        [0, -6 * b / (l * (m + 4 * M)), 0, 6 *
-         ((M + m) * g) / ((m + 4 * M) * l)],
+        [
+            0,
+            -(4 * b) / (m + 4 * M),
+            0,
+            (3 * m * g) / (m + 4 * M)
+        ],
+        [
+            0,
+            -6 * b / (l * (m + 4 * M)),
+            0,
+            6 * ((M + m) * g) / ((m + 4 * M) * l)
+        ],
         [0, 0, 1, 0],
     ]
 )
 
-B = np.array([[0.0, 4 / (m + 4 * M), 6 / (l * (m + 4 * M)), 0.0]])
+B = np.array([
+    [
+        0.0,
+        4 / (m + 4 * M),
+        6 / (l * (m + 4 * M)),
+        0.0
+    ]
+])
 B.shape = (4, 1)
 
-Q = np.array([[1, 1, 1, 1], [1, 1, 0, 0], [1, 0, 1, 0], [1, 0, 0, 1]])
+Q = np.array([
+    [100, 1, 1, 1],
+    [1, 100, 0, 0],
+    [1, 0, 100, 0],
+    [1, 0, 0, 100]
+])
 
 R = np.array([[1]])
 # print("A holds:", A)
@@ -49,7 +70,7 @@ R = np.array([[1]])
 # Uncomment this to get the LQR gains k once you have
 # filled in the correct matrices.
 k = lqr(A, B, Q, R)
-# print("k holds:", k)
+print("k holds:", k)
 
 
 def policyfn(x):
